@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from monte_carlo import run_simulation
-from optimizer import optimize_controls
+from .monte_carlo import run_simulation
+from .optimizer import optimize_controls
 
 
 BASE_DIR = Path(__file__).resolve().parent

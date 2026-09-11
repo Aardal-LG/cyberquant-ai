@@ -1,8 +1,8 @@
 import json
 
-from monte_carlo import run_simulation
-from optimizer import optimize_controls
-from rosi import calculate_rosi,load_parameters
+from .monte_carlo import run_simulation
+from .optimizer import optimize_controls
+from .rosi import calculate_rosi,load_parameters
 def run_engine():
     parameters = load_parameters()
 
