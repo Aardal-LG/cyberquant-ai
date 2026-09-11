@@ -30,7 +30,6 @@ class Settings(BaseSettings):
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USERNAME: str = "neo4j"
     NEO4J_PASSWORD: str = "cyberquant_secure_pass"
-
     # Security / Auth Settings
     JWT_SECRET_KEY: str = "cyberquant_super_secret_jwt_key_change_in_production_2026"
     ALGORITHM: str = "HS256"
