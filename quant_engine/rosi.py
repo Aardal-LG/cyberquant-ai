@@ -25,12 +25,7 @@ def calculate_combined_reduction(selected_controls, controls):
     return 1 - reduction_remaining
 
 
-def calculate_rosi():
-    parameters = load_parameters()
-
-    simulation = run_simulation()
-    optimization = optimize_controls()
-
+def calculate_rosi(simulation, optimization, parameters):
     pre_control_eal = simulation["eal_usd"]
 
     selected_controls = optimization["selected_control_ids"]
@@ -63,8 +58,6 @@ def calculate_rosi():
         "rosi_percent": rosi_percent,
         "selected_control_ids": selected_controls
     }
-
-
 if __name__ == "__main__":
     result = calculate_rosi()
 
