@@ -7,3 +7,4 @@ celery>=5.3.6
 redis>=5.0.1
 python-dotenv>=1.0.0
 httpx>=0.25.1
+neo4j>=5.12.0
