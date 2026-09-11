@@ -8,17 +8,17 @@ to replace or supplement the contract values below.
 
 from app.schemas.financial import FinancialRiskMetrics, FinancialRiskResponse, LossDistributionSample
 from app.services.mock_loader import mock_loader
-
+from quant_engine.run_engine import run_engine
 
 class RiskService:
     def get_financial_risk_summary(self) -> FinancialRiskResponse:
         metrics_dict = mock_loader.get_risk_metrics()
-        
+        quant_results = run_engine()
         metrics = FinancialRiskMetrics(
             composite_technical_risk_score=metrics_dict.get("composite_technical_risk_score", 78.4),
-            expected_annual_loss_usd=metrics_dict.get("expected_annual_loss_usd", 1250000.0),
-            value_at_risk_95_usd=metrics_dict.get("value_at_risk_95_usd", 2100000.0),
-            conditional_var_95_usd=metrics_dict.get("conditional_var_95_usd", 2850000.0),
+            expected_annual_loss_usd=quant_results["monte_carlo"]["eal_usd"],
+            value_at_risk_95_usd=quant_results["monte_carlo"]["var_95_usd"],
+            conditional_var_95_usd=quant_results["monte_carlo"]["cvar_95_usd"],
             annual_loss_frequency=metrics_dict.get("annual_loss_frequency", 4.2),
             average_loss_magnitude_usd=metrics_dict.get("average_loss_magnitude_usd", 297619.0),
             high_risk_asset_count=metrics_dict.get("high_risk_asset_count", 7),
@@ -36,7 +36,8 @@ class RiskService:
         
         return FinancialRiskResponse(
             metrics=metrics,
-            simulation_method="Monte Carlo 10,000 Iterations (Member 4 Integration Stub)",
+            simulation_method="Monte Carlo 10,000 Iterations (Member 4 Quant Engine)",
+
             loss_distribution=loss_distribution,
         )
 
