@@ -1,0 +1,57 @@
+{
+  "simulation": {
+    "iterations": 10000,
+	"random_seed": 42
+  },
+  "frequency": {
+    "distribution": "poisson",
+    "lambda_source": "P(exploit)"
+  },
+  "severity": {
+    "distribution": "triangular",
+    "min_usd": 100000,
+    "mode_usd": 300000,
+    "max_usd": 500000
+  },
+  "budget": {
+    "total_usd": 350000
+  },
+  "controls": [
+    {
+      "id": "CTRL-001",
+      "name": "Next-Gen EDR Deployment across all Endpoints & Servers",
+      "cost_usd": 120000,
+      "risk_reduction_factor": 0.35
+    },
+    {
+      "id": "CTRL-002",
+      "name": "Privileged Access Management (PAM) & Just-In-Time Access",
+      "cost_usd": 95000,
+      "risk_reduction_factor": 0.28
+    },
+    {
+      "id": "CTRL-003",
+      "name": "Automated Patch & Vulnerability Management Engine",
+      "cost_usd": 70000,
+      "risk_reduction_factor": 0.30
+    },
+    {
+      "id": "CTRL-004",
+      "name": "Web Application Firewall (WAF) & API Shielding",
+      "cost_usd": 85000,
+      "risk_reduction_factor": 0.22
+    },
+    {
+      "id": "CTRL-005",
+      "name": "Zero-Trust Network Microsegmentation",
+      "cost_usd": 150000,
+      "risk_reduction_factor": 0.40
+    },
+    {
+      "id": "CTRL-006",
+      "name": "Hardware Token Enforced Multi-Factor Authentication (MFA)",
+      "cost_usd": 40000,
+      "risk_reduction_factor": 0.18
+    }
+  ]
+}
