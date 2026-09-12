@@ -35,7 +35,7 @@ def get_exploit_probabilities(mock_data):
     return probabilities
 
 
-def run_simulation():
+def run_simulation(exploit_probabilities=None):
     parameters = load_json(PARAMETERS_FILE)
     mock_data = load_json(MOCK_DATA_FILE)
 
@@ -46,7 +46,9 @@ def run_simulation():
     mode_loss = parameters["severity"]["mode_usd"]
     max_loss = parameters["severity"]["max_usd"]
 
-    probabilities = get_exploit_probabilities(mock_data)
+    probabilities = ([float(probability) for probability in exploit_probabilities]
+                     if exploit_probabilities is not None
+                     else get_exploit_probabilities(mock_data))
 
     if not probabilities:
         raise ValueError(

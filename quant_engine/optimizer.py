@@ -13,11 +13,16 @@ def load_parameters():
         return json.load(file)
 
 
-def optimize_controls():
+def optimize_controls(budget_usd=None, mandated_control_ids=None):
     parameters = load_parameters()
 
-    budget = parameters["budget"]["total_usd"]
+    budget = budget_usd if budget_usd is not None else parameters["budget"]["total_usd"]
     controls = parameters["controls"]
+    mandated_control_ids = set(mandated_control_ids or [])
+    known_control_ids = {control["id"] for control in controls}
+    unknown_controls = mandated_control_ids - known_control_ids
+    if unknown_controls:
+        raise ValueError(f"Unknown mandated controls: {', '.join(sorted(unknown_controls))}")
 
     solver = pywraplp.Solver.CreateSolver("SCIP")
 
@@ -42,6 +47,9 @@ def optimize_controls():
         )
         <= budget
     )
+
+    for control_id in mandated_control_ids:
+        solver.Add(decisions[control_id] == 1)
 
     solver.Maximize(
         sum(

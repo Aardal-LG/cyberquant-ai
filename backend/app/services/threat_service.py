@@ -1,57 +1,48 @@
-"""
-Threat Service — Integration interface for Member 3 (GBDT / XGBoost + DBSCAN Anomaly Detection).
+"""Threat intelligence service backed by the existing GBDT and DBSCAN models."""
 
-Member 3 Integration Note:
-Replace or wrap the mock payload methods below with live GBDT exploit likelihood predictions
-and DBSCAN clustering anomaly outputs when Member 3 delivers their python module/package.
-"""
+from datetime import datetime, timezone
 
-from datetime import datetime
 from app.schemas.vulnerability import ThreatAnomaliesListResponse, ThreatAnomalyResponse
+from app.services.ml_service import ml_service
 from app.services.mock_loader import mock_loader
 
 
 class ThreatService:
     def get_detected_anomalies(self) -> ThreatAnomaliesListResponse:
-        vulnerabilities = mock_loader.get_vulnerabilities()
-        assets = mock_loader.get_assets()
-        
-        anomalies = [
-            ThreatAnomalyResponse(
-                anomaly_id="ANOM-2026-001",
-                asset_id="AST-002",
-                cve_id="CVE-2023-34362",
-                anomaly_score=0.94,
-                detection_method="DBSCAN Traffic Spike Clustering (Member 3 Stub)",
-                gbdt_exploit_probability=0.88,
-                status="ACTIVE_INVESTIGATION",
-                timestamp=datetime.utcnow().isoformat() + "Z",
-            ),
-            ThreatAnomalyResponse(
-                anomaly_id="ANOM-2026-002",
-                asset_id="AST-001",
-                cve_id="CVE-2021-44228",
-                anomaly_score=0.98,
-                detection_method="GBDT High Exploit Likelihood Prediction (Member 3 Stub)",
-                gbdt_exploit_probability=0.95,
-                status="CRITICAL_ALERT",
-                timestamp=datetime.utcnow().isoformat() + "Z",
-            ),
-            ThreatAnomalyResponse(
-                anomaly_id="ANOM-2026-003",
-                asset_id="AST-004",
-                cve_id="CVE-2023-23397",
-                anomaly_score=0.82,
-                detection_method="DBSCAN Auth Anomaly (Member 3 Stub)",
-                gbdt_exploit_probability=0.82,
-                status="MONITORING",
-                timestamp=datetime.utcnow().isoformat() + "Z",
-            ),
-        ]
-        
+        predictions = ml_service.predict_vulnerabilities(mock_loader.get_vulnerabilities())
+        vulnerable_assets = {
+            asset["id"]: asset.get("associated_vulnerabilities", [])
+            for asset in mock_loader.get_assets()
+        }
+        user_assets = {
+            user["user_id"]: user.get("accessible_assets", [])
+            for user in mock_loader.get_users()
+        }
+
+        anomalies = []
+        detected_logs = ml_service.detect_log_anomalies()
+        for index, log in detected_logs[detected_logs["is_anomaly"]].iterrows():
+            accessible_assets = user_assets.get(log["user_id"], [])
+            asset_id = next((asset for asset in accessible_assets if vulnerable_assets.get(asset)), None)
+            if asset_id is None:
+                asset_id = next(asset for asset, cves in vulnerable_assets.items() if cves)
+            cve_id = max(vulnerable_assets[asset_id], key=lambda cve: predictions.get(cve, 0.0))
+            probability = predictions[cve_id]
+            anomaly_score = min(1.0, (float(log["traffic_mb"]) + float(log["failed_logins"]) * 10) / 1000)
+            anomalies.append(ThreatAnomalyResponse(
+                anomaly_id=f"ANOM-ML-{index + 1:03d}",
+                asset_id=asset_id,
+                cve_id=cve_id,
+                anomaly_score=round(anomaly_score, 4),
+                detection_method="DBSCAN behavioral anomaly + GBDT exploit likelihood",
+                gbdt_exploit_probability=round(probability, 6),
+                status="CRITICAL_ALERT" if probability >= 0.8 else "ACTIVE_INVESTIGATION",
+                timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            ))
+
         return ThreatAnomaliesListResponse(
             total_anomalies=len(anomalies),
-            high_priority_count=2,
+            high_priority_count=sum(item.gbdt_exploit_probability >= 0.8 for item in anomalies),
             anomalies=anomalies,
         )
 

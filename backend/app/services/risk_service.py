@@ -8,12 +8,14 @@ to replace or supplement the contract values below.
 
 from app.schemas.financial import FinancialRiskMetrics, FinancialRiskResponse, LossDistributionSample
 from app.services.mock_loader import mock_loader
+from app.services.ml_service import ml_service
 from quant_engine.run_engine import run_engine
 
 class RiskService:
     def get_financial_risk_summary(self) -> FinancialRiskResponse:
         metrics_dict = mock_loader.get_risk_metrics()
-        quant_results = run_engine()
+        predictions = ml_service.predict_vulnerabilities(mock_loader.get_vulnerabilities())
+        quant_results = run_engine(exploit_probabilities=predictions.values())
         metrics = FinancialRiskMetrics(
             composite_technical_risk_score=metrics_dict.get("composite_technical_risk_score", 78.4),
             expected_annual_loss_usd=quant_results["monte_carlo"]["eal_usd"],

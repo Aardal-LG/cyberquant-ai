@@ -1,13 +1,26 @@
 version: '3.8'
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cyberquant_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   # ----------------------------------------------------------------------------
   # Member 1: FastAPI Backend Service
   # ----------------------------------------------------------------------------
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: cyberquant_backend
     ports:
       - "8000:8000"
@@ -31,8 +44,8 @@ services:
   # ----------------------------------------------------------------------------
   celery_worker:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: cyberquant_celery_worker
     command: celery -A app.core.celery_app.celery_app worker --loglevel=info
     environment:

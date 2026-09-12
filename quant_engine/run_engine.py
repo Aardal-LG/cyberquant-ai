@@ -3,12 +3,12 @@ import json
 from .monte_carlo import run_simulation
 from .optimizer import optimize_controls
 from .rosi import calculate_rosi,load_parameters
-def run_engine():
+def run_engine(exploit_probabilities=None, budget_usd=None, mandated_control_ids=None):
     parameters = load_parameters()
 
-    monte_carlo_results = run_simulation()
+    monte_carlo_results = run_simulation(exploit_probabilities=exploit_probabilities)
 
-    optimization_results = optimize_controls()
+    optimization_results = optimize_controls(budget_usd=budget_usd, mandated_control_ids=mandated_control_ids)
 
     rosi_results = calculate_rosi(
         monte_carlo_results,

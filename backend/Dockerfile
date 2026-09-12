@@ -15,11 +15,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install python packages
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --upgrade pip && pip install -r backend/requirements.txt
 
 # Copy application code
-COPY . .
+COPY backend ./backend
+COPY ai_engine ./ai_engine
+COPY quant_engine ./quant_engine
+COPY mock_data.json ./mock_data.json
+
+WORKDIR /app/backend
+ENV PYTHONPATH=/app
 
 # Expose port
 EXPOSE 8000

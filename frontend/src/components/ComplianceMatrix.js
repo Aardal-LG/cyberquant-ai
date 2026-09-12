@@ -1,14 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShieldCheck, Search, FileText, CheckCircle2, AlertCircle, Layers } from 'lucide-react';
-import { masterMockData } from '../lib/mockData';
+import { fetchCompliance } from '../lib/api';
 
 export default function ComplianceMatrix() {
   const [searchTerm, setSearchTerm] = useState('');
   const [frameworkFilter, setFrameworkFilter] = useState('ALL');
+  const [compliance, setCompliance] = useState({ frameworks: [], control_mappings: [] });
+  const [error, setError] = useState(null);
 
-  const controls = masterMockData.controls;
+  useEffect(() => {
+    fetchCompliance().then(setCompliance).catch((err) => setError(err.message));
+  }, []);
+
+  const controls = Object.values(compliance.control_mappings.reduce((byControl, mapping) => {
+    const control = byControl[mapping.control_id] || {
+      id: mapping.control_id,
+      name: mapping.control_name,
+      category: 'Security control',
+      compliance_mappings: {}
+    };
+    control.compliance_mappings[mapping.framework] = mapping.mapped_requirements;
+    byControl[mapping.control_id] = control;
+    return byControl;
+  }, {}));
 
   const filteredControls = controls.filter(ctrl => {
     const matchesSearch = 
@@ -52,34 +68,16 @@ export default function ComplianceMatrix() {
         </div>
       </div>
 
-      {/* Framework Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
-          <span className="text-gray-400 font-semibold">NIST 800-53</span>
-          <div className="text-lg font-bold text-sky-400 mt-1">92% Covered</div>
-          <span className="text-[10px] text-gray-500">DE.CM-4, PR.AC-1, ID.RA-5</span>
-        </div>
-        <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
-          <span className="text-gray-400 font-semibold">ISO/IEC 27001</span>
-          <div className="text-lg font-bold text-emerald-400 mt-1">88% Covered</div>
-          <span className="text-[10px] text-gray-500">A.9.2.3, A.12.2.1, A.13.1.1</span>
-        </div>
-        <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
-          <span className="text-gray-400 font-semibold">CIS Controls v8</span>
-          <div className="text-lg font-bold text-purple-400 mt-1">95% Covered</div>
-          <span className="text-[10px] text-gray-500">V8-10.1, V8-5.4, V8-7.1</span>
-        </div>
-        <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
-          <span className="text-gray-400 font-semibold">RBI Cyber Security</span>
-          <div className="text-lg font-bold text-amber-400 mt-1">90% Covered</div>
-          <span className="text-[10px] text-gray-500">Clause 3.2, 4.1, 5.3</span>
-        </div>
-        <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
-          <span className="text-gray-400 font-semibold">SEBI CCRF</span>
-          <div className="text-lg font-bold text-teal-400 mt-1">85% Covered</div>
-          <span className="text-[10px] text-gray-500">Req 1.4, 2.3, 3.1</span>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {compliance.frameworks.map((framework) => (
+          <div key={framework.code} className="p-3 bg-gray-900/80 rounded-xl border border-gray-800 text-xs">
+            <span className="text-gray-400 font-semibold">{framework.framework_name}</span>
+            <div className="text-lg font-bold text-emerald-400 mt-1">{framework.overall_compliance_score}% Covered</div>
+            <span className="text-[10px] text-gray-500">Gaps: {framework.gap_areas.join(', ') || 'None'}</span>
+          </div>
+        ))}
       </div>
+      {error && <p className="text-xs text-red-400">Compliance API unavailable: {error}</p>}
 
       {/* Compliance Mapping Table */}
       <div className="overflow-x-auto">

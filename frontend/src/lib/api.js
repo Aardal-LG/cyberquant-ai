@@ -4,15 +4,24 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/a
 
 export async function fetchTopologyData() {
   try {
-    const res = await fetch(`${API_BASE_URL}/topology`, { signal: AbortSignal.timeout(3000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const request = async (path) => {
+      const res = await fetch(`${API_BASE_URL}${path}`, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+      return res.json();
+    };
+    const [assets, threats, topology] = await Promise.all([
+      request('/assets'),
+      request('/threats/anomalies'),
+      request('/topology')
+    ]);
     return {
-      assets: masterMockData.assets,
+      assets: assets.assets,
+      // The current backend has no vulnerability-inventory endpoint; retain the
+      // shared contract data for the detail table until that owned API exists.
       vulnerabilities: masterMockData.vulnerabilities,
-      network_connections: data.network_connections || masterMockData.network_connections,
-      anomalies: masterMockData.anomalies,
-      critical_attack_paths: data.critical_attack_paths || masterMockData.critical_attack_paths,
+      network_connections: topology.network_connections,
+      anomalies: threats.anomalies,
+      critical_attack_paths: topology.critical_attack_paths,
       source: 'live_backend'
     };
   } catch (err) {
@@ -45,46 +54,15 @@ export async function fetchOptimization(budget = 350000) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return data;
+    return data.summary;
   } catch (err) {
-    // Dynamic MILP simulation fallback based on budget
-    const controls = masterMockData.controls;
-    let availableBudget = budget;
-    let selectedControls = [];
-    let totalCost = 0;
-    let cumulativeReduction = 1.0;
-
-    // Simple greedy selection by efficiency
-    const sortedControls = [...controls].sort((a, b) => b.risk_reduction_factor / b.cost_usd - a.risk_reduction_factor / a.cost_usd);
-
-    for (const ctrl of sortedControls) {
-      if (ctrl.cost_usd <= availableBudget) {
-        selectedControls.push(ctrl);
-        availableBudget -= ctrl.cost_usd;
-        totalCost += ctrl.cost_usd;
-        cumulativeReduction *= (1 - ctrl.risk_reduction_factor);
-      }
-    }
-
-    const baselineEal = masterMockData.risk_metrics.expected_annual_loss_usd;
-    const postControlEal = Math.round(baselineEal * cumulativeReduction);
-    const netRiskReduction = baselineEal - postControlEal;
-    const netBenefit = netRiskReduction - totalCost;
-    const rosiPercent = totalCost > 0 ? ((netRiskReduction - totalCost) / totalCost) * 100 : 0;
-
-    return {
-      budget_usd: budget,
-      selected_control_ids: selectedControls.map(c => c.id),
-      selected_controls: selectedControls,
-      total_investment_cost_usd: totalCost,
-      pre_control_eal_usd: baselineEal,
-      post_control_eal_usd: postControlEal,
-      net_risk_reduction_usd: netRiskReduction,
-      net_financial_benefit_usd: netBenefit,
-      return_on_security_investment_percent: parseFloat(rosiPercent.toFixed(2)),
-      post_control_var_95_usd: Math.round(masterMockData.risk_metrics.value_at_risk_95_usd * cumulativeReduction),
-      post_control_cvar_95_usd: Math.round(masterMockData.risk_metrics.conditional_var_95_usd * cumulativeReduction),
-      algorithm_version: "OR-Tools MILP Simulator (Mock Fallback)"
-    };
+    console.warn('Optimization API unavailable; displaying the last bundled result.', err.message);
+    return masterMockData.optimization_results;
   }
+}
+
+export async function fetchCompliance() {
+  const res = await fetch(`${API_BASE_URL}/compliance`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }

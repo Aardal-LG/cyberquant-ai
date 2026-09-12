@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
-MOCK_DATA_PATH = BASE_DIR / "mock_data.json"
+MOCK_DATA_PATH = BASE_DIR.parent / "mock_data.json"
 
 
 # ================================================================

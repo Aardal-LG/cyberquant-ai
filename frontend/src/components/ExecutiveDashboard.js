@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingDown, Percent, ShieldCheck, Sliders, Award, Layers, AlertOctagon, CheckCircle2, ArrowRight } from 'lucide-react';
-import { fetchOptimization } from '../lib/api';
+import { fetchFinancialRisk, fetchOptimization } from '../lib/api';
 import { masterMockData } from '../lib/mockData';
 
 export default function ExecutiveDashboard() {
   const [budget, setBudget] = useState(350000);
   const [optimization, setOptimization] = useState(masterMockData.optimization_results);
+  const [financialRisk, setFinancialRisk] = useState(masterMockData.risk_metrics);
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Re-run OR-Tools optimization whenever budget slider changes
@@ -22,6 +23,10 @@ export default function ExecutiveDashboard() {
     });
     return () => { isMounted = false; };
   }, [budget]);
+
+  useEffect(() => {
+    fetchFinancialRisk().then((result) => setFinancialRisk(result.metrics || result));
+  }, []);
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
@@ -63,7 +68,7 @@ export default function ExecutiveDashboard() {
           <h3 className="text-2xl font-extrabold text-amber-300 mt-1">
             {formatCurrency(optimization.post_control_var_95_usd || 714000)}
           </h3>
-          <p className="text-xs text-gray-400 mt-1">Baseline 95% VaR: {formatCurrency(2100000)}</p>
+          <p className="text-xs text-gray-400 mt-1">Baseline 95% VaR: {formatCurrency(financialRisk.value_at_risk_95_usd)}</p>
         </div>
 
         {/* ROSI % */}
@@ -112,7 +117,7 @@ export default function ExecutiveDashboard() {
           <input
             type="range"
             min={50000}
-            max={60000}
+            max={600000}
             step={10000}
             value={budget}
             onChange={(e) => setBudget(Number(e.target.value))}

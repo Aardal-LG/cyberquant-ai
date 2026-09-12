@@ -7,11 +7,17 @@ Plug in your OR-Tools MILP solver logic to optimize security control selection d
 from quant_engine.run_engine import run_engine
 from app.schemas.optimization import OptimizationRequest, OptimizationResponse, OptimizationResult, SecurityControl
 from app.services.mock_loader import mock_loader
+from app.services.ml_service import ml_service
 
 
 class OptimizeService:
     def optimize_security_investment(self, request: OptimizationRequest) -> OptimizationResponse:
-        quant_results = run_engine()
+        predictions = ml_service.predict_vulnerabilities(mock_loader.get_vulnerabilities())
+        quant_results = run_engine(
+            exploit_probabilities=predictions.values(),
+            budget_usd=request.budget_usd,
+            mandated_control_ids=request.mandated_control_ids,
+        )
 
         optimization = quant_results["optimization"]
         financial = quant_results["financial_impact"]
